@@ -1,10 +1,7 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import {
-  API_SYSTEM_DESCRIPTION,
-  API_SYSTEM_NAME,
-} from './common/constants';
+import { API_SYSTEM_DESCRIPTION, API_SYSTEM_NAME } from './common/constants';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -12,10 +9,11 @@ import { ThrottlerExceptionFilter } from './common/filters';
 var Fingerprint = require('express-fingerprint');
 import { LoggerConfig } from './config/logger.config';
 import { ConfigService } from '@nestjs/config';
+import { configuration } from './config';
 
-const API_SYSTEM_PORT = process.env.API_SYSTEM_PORT;
-const API_SYSTEM_VERSION = process.env.API_SYSTEM_VERSION;
-const CONSOLE_URL = process.env.CONSOLE_URL;
+// const API_SYSTEM_PORT = process.env.API_SYSTEM_PORT;
+// const API_SYSTEM_VERSION = process.env.API_SYSTEM_VERSION;
+// const CONSOLE_URL = process.env.CONSOLE_URL;
 
 async function bootstrap() {
   // Create the app with bufferLogs option to queue logs until Winston is ready
@@ -40,7 +38,7 @@ async function bootstrap() {
 
   // Configure CORS
   app.enableCors({
-    origin: CONSOLE_URL,
+    origin: configuration.consoleUrl || 'http://localhost:4000',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -70,7 +68,7 @@ async function bootstrap() {
       'token',
     )
     .addSecurityRequirements('token')
-    .setVersion(API_SYSTEM_VERSION!)
+    .setVersion(configuration.version || '1.0.0')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, documentFactory, {
@@ -79,10 +77,16 @@ async function bootstrap() {
     },
   });
 
-  await app.listen(API_SYSTEM_PORT!);
+  await app.listen(configuration.port || 3333!);
 
   // Use the Winston logger instance directly
-  winstonLogger.log(`Application is running on port ${API_SYSTEM_PORT}`, 'Bootstrap');
-  winstonLogger.log(`Swagger docs available at: http://localhost:${API_SYSTEM_PORT}/api/docs`, 'Bootstrap');
+  winstonLogger.log(
+    `Application is running on port ${configuration.port}`,
+    'Bootstrap',
+  );
+  winstonLogger.log(
+    `Swagger docs available at: http://localhost:${configuration.port}/api/docs`,
+    'Bootstrap',
+  );
 }
 bootstrap();

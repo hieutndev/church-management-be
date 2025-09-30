@@ -1,4 +1,9 @@
-import type { Config, Default, Objectype, Production } from './config.interface';
+import type {
+  Config,
+  Default,
+  Objectype,
+  Production,
+} from './config.interface';
 
 const util = {
   isObject<T>(value: T): value is T & Objectype {
@@ -9,7 +14,10 @@ const util = {
       const targetValue = target[key];
       const sourceValue = source[key];
       if (this.isObject(targetValue) && this.isObject(sourceValue)) {
-        Object.assign(sourceValue as object, this.merge(targetValue, sourceValue));
+        Object.assign(
+          sourceValue as object,
+          this.merge(targetValue, sourceValue),
+        );
       }
     }
 
@@ -17,10 +25,16 @@ const util = {
   },
 };
 
-export const configuration = async (): Promise<Config> => {
-  const { config } = <{ config: Default }>await import(`${__dirname}/envs/default`);
-  const { config: environment } = <{ config: Production }>await import(`${__dirname}/envs/${process.env.NODE_ENV || 'development'}`);
+import { config as defaultConfig } from './envs/default';
+import { config as developmentConfig } from './envs/development';
+import { config as productionConfig } from './envs/production';
 
-  // object deep merge
-  return util.merge(config, environment);
-};
+let environmentConfig: any = developmentConfig;
+if (process.env.NODE_ENV === 'production') {
+  environmentConfig = productionConfig;
+}
+
+export const configuration: Config = util.merge(
+  defaultConfig,
+  environmentConfig,
+);
